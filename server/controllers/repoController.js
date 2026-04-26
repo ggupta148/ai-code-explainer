@@ -3,6 +3,9 @@ import path from "path";
 import Repo from "../models/Repo.js";
 import { getAllFiles, readFilesContent } from "../services/fileParser.js";
 import { chunkCode } from "../services/chunker.js";
+import { generateExplanation } from "../services/aiService.js";
+
+import Chunk from "../models/Chunk.js";
 
 const git = simpleGit();
 
@@ -34,20 +37,34 @@ export const addRepo = async (req, res) => {
     });
 
     console.log("Total chunks:", allChunks.length);
-
-    console.log("Total files:", files.length);
-
-    const repo = await Repo.create({
+        const repo = await Repo.create({
       user: req.user.id,
       repoUrl,
       name: repoName,
       localPath,
     });
+    // let explanations = [];
+    const sampleChunks = allChunks.slice(0, 5);
+
+    for (let chunk of sampleChunks) {
+      const explanation = await generateExplanation(chunk.content);
+
+      await Chunk.create({
+        repo: repo._id,
+        file: chunk.file,
+        content: chunk.content,
+        explanation,
+      });
+    }
+
+    console.log("Total files:", files.length);
+
+
 
     res.json({
-        message: "Repo processed",
-        totalFiles: files.length,
-        totalChunks: allChunks.length,
+      message: "Repo processed and explanations stored",
+      totalFiles: files.length,
+      totalChunks: allChunks.length,
     });
 
   } catch (err) {
