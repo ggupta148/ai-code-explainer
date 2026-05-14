@@ -7,6 +7,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+console.log("checking");
 
 app.get("/api/protected", protect, (req, res) => {
   res.json({
